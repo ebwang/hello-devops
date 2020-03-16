@@ -3,9 +3,9 @@ from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
-host = os.getenv("RABBITMQ_HOST", "localhost")
-port = os.getenv("RABBITMQ_PORT", 5672)
-queue = os.getenv("RABBITMQ_QUEUE", "hello")
+hostA = os.getenv("RABBITMQ_HOST", "hello-rabbit")
+portA = os.getenv("RABBITMQ_PORT", 5672)
+queueA = os.getenv("RABBITMQ_QUEUE", "hello")
 
 html = """ 
 <br>Type your favourite <i>pudim</i> flavour: 
@@ -20,7 +20,9 @@ html = """
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
-        app.logger.info(request.form.get("flavour"))
+        v = request.form.get("flavour")
+        app.logger.info(str(v))
+        enqueue(str(v))
     return html
 
 
@@ -31,14 +33,14 @@ def health():
 
 def enqueue(value):
     app.logger.info("Received message: %s", value)
-    params = pika.ConnectionParameters(host=host, port=port)
+    params = pika.ConnectionParameters(host=hostA, port=portA)
     connection = pika.BlockingConnection(params)
     channel = connection.channel()
-    channel.queue_declare(queue=queue)
-    channel.basic_publish(exchange='', routing_key=queue, body=value)
+    channel.queue_declare(queue=queueA)
+    channel.basic_publish(exchange='', routing_key=queueA, body=value)
     connection.close()
-    app.logger.info("Enqueued message on host %s:%s queue %s: %s", host, port,
-                    queue, value)
+    app.logger.info("Enqueued message on host %s:%s queue %s: %s", hostA, portA,
+                    queueA, value)
 
 
 if __name__ == "__main__":

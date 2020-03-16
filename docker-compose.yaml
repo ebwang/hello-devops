@@ -1,0 +1,79 @@
+version: '2.0'
+services:
+  hello-rabbit:
+    image: rabbitmq
+    container_name: hello-rabbit-cont
+    environment:
+      - RABBITMQ_HOST=hello-rabbit
+    networks:
+      - devops-net
+  hello-db:
+    image: mariadb:10.1
+    container_name: hello-devops-my
+    command: --init-file /data/init.sql
+    environment:
+      - MYSQL_ROOT_PASSWORD=hello  # Requested, set the root's password of MySQL service.
+      - MYSQL_LOG_CONSOLE=true
+      - MYSQL_HOST=hello-nodejs
+      - MYSQL_USER=hello
+      - MYSQL_PASSWORD=hello
+      - MYSQL_DATABASE=hello
+    volumes:
+      - ./hello-devops-mysql/db:/var/lib/mysql  # Requested, specifies the path to MySQL data persistent store.
+      - ./create_database.sql:/data/init.sql
+    networks:
+      - devops-net
+  hello-nodejs:
+    build: ./hello-node
+    container_name: hello-node-cont
+    ports:
+      - "5672"
+    volumes:
+        - '.:/usr/src/app'
+    environment:
+      - RABBITMQ_HOST=hello-rabbit
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_QUEUE=hello
+      - MYSQL_HOST=hello-db
+      - MYSQL_USER=hello
+      - MYSQL_PASSWORD=hello
+      - MYSQL_DB=hello 
+    depends_on:
+      - hello-db
+      - hello-rabbit
+    networks:
+      - devops-net
+
+  hello-python3:
+    build: ./hello-python
+    container_name: hello-python-cont
+    volumes:
+        - '.:/usr/src/app'
+    ports:
+      - "8000:8000"
+    environment:
+      - RABBITMQ_HOST=hello-rabbit
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_QUEUE=hello
+    depends_on:
+      - hello-rabbit
+    networks:
+      - devops-net
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: hello_phpmyadmin
+    environment:
+      - PMA_HOST=hello-db
+    restart: always
+    ports:
+      - 80:80
+    volumes:
+      - /sessions
+    networks:
+      - devops-net
+
+
+networks:
+  devops-net:
+

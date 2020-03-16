@@ -1,0 +1,54 @@
+---
+# tasks file for pre-inst-infra
+- name: Ensure apt-transport-https is installed
+  apt:
+      name: apt-transport-https
+      state: present
+- name: Ensure ca-certificates is installed
+  apt:
+      name: ca-certificates
+      state: present
+- name: Ensure gnupg2 is installed
+  apt:
+      name: gnupg2
+      state: present
+- name: Ensure curl is installed
+  apt:
+      name: curl
+      state: present
+- name: Add key
+  apt_key: id=A88D21E9 state=present url=https://get.docker.com/gpg
+- name: Installing docker
+  shell: curl -sSL https://get.docker.com/ | sh
+- name: Ensure docker-compose is installed
+  apt:
+      name: docker-compose
+      state: present
+- name: Ensure docker-compose is installed
+  apt:
+      name: docker-compose
+      state: present
+- name: Stop Stack Compose [ignore error msg on 1rst deploy]
+  shell: docker-compose -f /var/opt/hello-devops/docker-compose.yaml down
+  ignore_errors: true 
+- name: Execute Docker System Prune
+  shell: docker system prune -f
+  ignore_errors: true 
+- name: Erase app old version
+  file:
+      path: /var/opt/hello-devops
+      state: absent
+- name: Create app new version
+  file:
+      path: /var/opt/hello-devops
+      state: directory
+- name: Clone repository
+  copy:
+      src: ../../../
+      dest: /var/opt/hello-devops
+- name: Execute Rabbitmq Compose
+  shell: docker-compose -f /var/opt/hello-devops/docker-compose.yaml up -d hello-rabbit
+- pause:
+      seconds: 30 
+- name: Execute Stack Compose
+  shell: docker-compose -f /var/opt/hello-devops/docker-compose.yaml up -d

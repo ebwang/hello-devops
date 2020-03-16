@@ -1,0 +1,38 @@
+{
+    "variables": {
+      "aws_access_key": "",
+      "aws_secret_key": ""
+    },
+    "builders": [{
+      "type": "amazon-ebs",
+      "access_key": "{{user `aws_access_key`}}",
+      "secret_key": "{{user `aws_secret_key`}}",
+      "region": "us-east-1",
+      "source_ami_filter": {
+        "filters": {
+          "virtualization-type": "hvm",
+          "name": "debian-stretch-hvm-x86_64-gp2-2018-11-10-63975*",
+          "root-device-type": "ebs"
+        },
+        "owners": ["379101102735"],
+        "most_recent": true
+      },
+      "instance_type": "t2.micro",
+      "ssh_username": "admin",
+      "ami_name": "debian-core {{ timestamp }}"
+    }],
+    "provisioners": [
+      {
+      "type": "shell",
+      "inline": [
+        "sudo setenforce 0",
+        "sudo sed -i 's/^SELINUX=enforcing$/SELINUX=disabled/' /etc/selinux/config",
+        "sudo apt install -y python3.7 python3-apt python3-pip",
+        "sudo sysctl --system",
+        "echo -e '*\t\thard\tnofile\t\t65535\n*\t\tsoft\tnofile\t\t65535' | sudo tee -a /etc/security/limits.conf"
+	]
+      }
+    ]
+}
+
+
